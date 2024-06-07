@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+#Added my changes to my branch
+
 # Initialize the recognizer and TTS engine
 recognizer = sr.Recognizer()
 whisper_model = whisper.load_model("base")
