@@ -8,12 +8,12 @@
 
 ### Requirements ####
 Before you can run this script, make sure you have the following installed:
-Python 3.8 or higher
-openai
-sounddevice
-soundfile
-pygame
-python-dotenv
+1.Python 3.8 or higher
+2.openai
+3.sounddevice
+4.soundfile
+5.pygame
+6.python-dotenv
 
 ## Setup ##
 Environment Variables:
