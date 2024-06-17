@@ -1,7 +1,6 @@
 python-dotenv
-openai-whisper
-TTS
 openai
-SpeechRecognition
-pyaudio
-# portaudio19-dev
+playsound
+pygame
+sounddevice
+soundfile
