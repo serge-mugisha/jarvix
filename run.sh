@@ -21,11 +21,11 @@ else
 fi
 
 # Run the main file
-if [ -f "main.py" ]; then
+if [ -f "jarvix/main.py" ]; then
     echo "Running main file..."
-    python main.py
+    python -m jarvix.main
 else
-    echo "Main file not found. Ensure main.py exists."
+    echo "Main file not found. Ensure jarvix/main.py exists."
 fi
 
 # Deactivate virtual environment

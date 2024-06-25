@@ -28,9 +28,9 @@ Add your OpenAI API key to the .env file:
 
 
 ## How It Works ##
-Record Audio: Starts recording from your microphone for a specified duration and saves it as output.wav.
+Record Audio: Starts recording from your microphone for a specified duration and saves it as user_input.wav.
 
-Speech to Text: Converts the recorded speech in output.wav to text using OpenAI's Whisper model.
+Speech to Text: Converts the recorded speech in user_input.wav to text using OpenAI's Whisper model.
 
 Process Text with GPT: Sends the transcribed text to GPT for processing, receives a response tailored to the context of an AI system named Jarvix.
 
@@ -39,4 +39,4 @@ Text to Speech: Converts the GPT response text to speech and saves it as speech.
 Play Audio: Plays the speech.mp3 file, letting you hear the AI's response.
 
 ## Note ##
-Ensure the paths for output.wav and speech.mp3 are correctly set in the script to match your file structure. Modify these paths in the script if your file structure is different from the default.
+Ensure the paths for user_input.wav and speech.mp3 are correctly set in the script to match your file structure. Modify these paths in the script if your file structure is different from the default.
