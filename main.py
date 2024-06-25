@@ -85,7 +85,7 @@ if __name__ == "__main__":
     audio = record_audio(duration)
 
     # Does the Speech to text
-    output = speech_to_text("/Users/xflo/Desktop/Files/code/jarvix/output.wav")
+    output = speech_to_text("./output.wav")
 
     #sends to GPT for Querying
     answer = process_text_with_gpt(output)
@@ -94,4 +94,4 @@ if __name__ == "__main__":
     text_to_speech(answer)
 
     #Plays the output
-    play_audio("/Users/xflo/Desktop/Files/code/jarvix/speech.mp3")
+    play_audio("./speech.mp3")
