@@ -1,1 +1,8 @@
-from .utils import play_audio, speech_to_text, text_to_speech
+"""
+OpenAI Chat GPT GUI usage Module.
+"""
+
+from .gui_version import use_chat_gpt_gui
+
+# Define __all__ to specify what is available for import
+__all__ = ['use_chat_gpt_gui']
