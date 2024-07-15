@@ -81,11 +81,17 @@ def play_audio(audio_file_path):
 
 # Main workflow
 if __name__ == "__main__":
+
+    # Use relative paths
+    current_dir = Path(__file__).parent
+    input_audio_path = current_dir / "output.wav"
+    output_audio_path = current_dir / "speech.mp3"
+
     duration = int(input("Enter the recording duration in seconds: "))
     audio = record_audio(duration)
 
     # Does the Speech to text
-    output = speech_to_text("/Users/xflo/Desktop/Files/code/jarvix/output.wav")
+    output = speech_to_text(input_audio_path)
 
     #sends to GPT for Querying
     answer = process_text_with_gpt(output)
@@ -94,4 +100,4 @@ if __name__ == "__main__":
     text_to_speech(answer)
 
     #Plays the output
-    play_audio("/Users/xflo/Desktop/Files/code/jarvix/speech.mp3")
+    play_audio(output_audio_path)
