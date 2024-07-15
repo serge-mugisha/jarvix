@@ -1,47 +1,46 @@
 import os
-from dotenv import load_dotenv
 import pvporcupine
 import sounddevice as sd
 import numpy as np
 
-# Load environment variables from .env file
-load_dotenv()
+class WakeWordDetector:
+    def __init__(self):
+        self.access_key = os.getenv('PORCUPINE_ACCESS_KEY')
+        self.keyword_paths = os.getenv('PORCUPINE_KEYWORD_PATHS').split(',')
 
-# Get the access key and keyword file paths from the loaded environment variables
-access_key = os.getenv('PORCUPINE_ACCESS_KEY')
-keyword_paths = os.getenv('PORCUPINE_KEYWORD_PATHS')
+        if not self.access_key or not self.keyword_paths:
+            raise ValueError("Porcupine access key or keyword paths not found.")
 
-# Check if the access key and keyword paths are available
-if not access_key:
-    raise ValueError("Porcupine access key not found in .env file. Please set the PORCUPINE_ACCESS_KEY variable.")
-if not keyword_paths:
-    raise ValueError("Keyword file paths not found in .env file. Please set the PORCUPINE_KEYWORD_PATHS variable.")
+        self.porcupine = pvporcupine.create(
+            access_key=self.access_key,
+            keyword_paths=self.keyword_paths
+        )
+        self.wake_word_detected = False
 
-# Convert the comma-separated string of paths to a list
-keyword_paths = keyword_paths.split(',')
+    def audio_callback(self, indata, frames, time, status):
+        if status:
+            print(status)
+        audio_frame = np.frombuffer(indata, dtype=np.int16)
+        keyword_index = self.porcupine.process(audio_frame)
+        if keyword_index >= 0:
+            print("Wake word detected!")
+            self.wake_word_detected = True
+            raise sd.CallbackStop
 
-# Create Porcupine instance with custom keywords
-porcupine = pvporcupine.create(
-    access_key=access_key,
-    keyword_paths=keyword_paths
-)
+    def listen_for_wake_word(self):
+        self.wake_word_detected = False
+        try:
+            with sd.InputStream(samplerate=self.porcupine.sample_rate,
+                                blocksize=self.porcupine.frame_length,
+                                channels=1, dtype='int16',
+                                callback=self.audio_callback):
+                print("Listening for wake word... Press Ctrl+C to exit.")
+                while not self.wake_word_detected:
+                    sd.sleep(100)
+        except sd.CallbackStop:
+            pass
+        return self.wake_word_detected
 
-def audio_callback(indata, frames, time, status):
-    if status:
-        print(status)
-    audio_frame = np.frombuffer(indata, dtype=np.int16)
-    keyword_index = porcupine.process(audio_frame)
-    if keyword_index >= 0:
-        print(f"Detected keyword Hey Jarvix")
-
-try:
-    with sd.InputStream(samplerate=porcupine.sample_rate, blocksize=porcupine.frame_length,
-                        channels=1, dtype='int16', callback=audio_callback):
-        print(f"Listening for custom wake words... Press Ctrl+C to exit.")
-        print(f"Loaded keywords: {', '.join(keyword_paths)}")
-        while True:
-            sd.sleep(100)
-except KeyboardInterrupt:
-    print("Stopping...")
-finally:
-    porcupine.delete()
+    def __del__(self):
+        if hasattr(self, 'porcupine'):
+            self.porcupine.delete()
