@@ -3,21 +3,23 @@ import pygame
 import sounddevice as sd
 import soundfile as sf
 
+
 def speech_to_text(client, file):
-    audio_file= open(file, "rb")
+    audio_file = open(file, "rb")
     transcription = client.audio.transcriptions.create(
-      model="whisper-1",
-      file=audio_file
+        model="whisper-1",
+        file=audio_file
     )
     return transcription.text
 
+
 def text_to_speech(client, text):
-    speech_file_path = Path(__file__).parent / "../../completion_response.mp3"
+    speech_file_path = Path(__file__).parent / "../completion_response.mp3"
     print("Saving response audio at", speech_file_path)
     response = client.audio.speech.create(
-      model="tts-1",
-      voice="nova",
-      input= text
+        model="tts-1",
+        voice="nova",
+        input=text
     )
 
     response.stream_to_file(speech_file_path)

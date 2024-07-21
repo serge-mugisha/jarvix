@@ -33,5 +33,5 @@ def call_chat_gpt(api_key):
     #generates Speech output
     text_to_speech(client, answer)
 
-    #Plays the output
+    #plays the output
     play_audio("./completion_response.mp3")
