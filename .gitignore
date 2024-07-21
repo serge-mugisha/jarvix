@@ -2,6 +2,7 @@
 .env
 *.mp3
 *.wav
+jarvix/XGUI/browser/
 
 # Workspace related
 .idea
