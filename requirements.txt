@@ -12,6 +12,7 @@ pyppeteer
 # custom models
 transformers
 torch
+ollama
 
 # chatbot
 pvporcupine

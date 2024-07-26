@@ -2,11 +2,7 @@ import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
-from dotenv import load_dotenv
-from jarvix.utils import speech_to_text, text_to_speech, play_audio
-
 # Load environment variables
-load_dotenv()
 api_key = os.getenv('OPENAI_API_KEY')
 
 
