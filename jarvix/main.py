@@ -1,21 +1,27 @@
-import os
-import asyncio
+from jarvix.XAPI import process_text_with_gpt
+from jarvix.XCHATBOT.chatbot import Chatbot
+from jarvix.XCHATBOT.wake import WakeWordDetector
 from dotenv import load_dotenv
 
-from jarvix.XAPI import call_chat_gpt
-from jarvix.XGUI import use_chat_gpt_gui
-from jarvix.utils import record_audio
+# from jarvix.XGUI import use_chat_gpt_gui
+# from jarvix.utils import record_audio
 
-
-# Load environment variables from .env file
 load_dotenv()
-api_key = os.getenv('OPENAI_API_KEY')
 
 # Main workflow
 if __name__ == "__main__":
-    duration = int(input("Enter the recording duration in seconds: "))
-    audio = record_audio(duration)
+    wake_detector = WakeWordDetector()
+    chatbot = Chatbot()
 
-    # call_chat_gpt(api_key)
-    asyncio.get_event_loop().run_until_complete(use_chat_gpt_gui())
-   
+    try:
+        while True:
+            print("Listening for wake word...")
+            if wake_detector.listen_for_wake_word():
+                print("Wake word detected! Starting conversation...")
+                # Pass in the function you want to process the prompt
+                chatbot.start_conversation(processor=process_text_with_gpt)
+                print("Conversation ended. Listening for wake word again...")
+    except KeyboardInterrupt:
+        print("Stopping...")
+
+    # asyncio.get_event_loop().run_until_complete(use_chat_gpt_gui())

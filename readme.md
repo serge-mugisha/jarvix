@@ -34,9 +34,9 @@ Speech to Text: Converts the recorded speech in user_input.wav to text using Ope
 
 Process Text with GPT: Sends the transcribed text to GPT for processing, receives a response tailored to the context of an AI system named Jarvix.
 
-Text to Speech: Converts the GPT response text to speech and saves it as speech.mp3.
+Text to Speech: Converts the GPT response text to speech and saves it as completion_response.mp3.
 
-Play Audio: Plays the speech.mp3 file, letting you hear the AI's response.
+Play Audio: Plays the completion_response.mp3 file, letting you hear the AI's response.
 
 ## Note ##
-Ensure the paths for user_input.wav and speech.mp3 are correctly set in the script to match your file structure. Modify these paths in the script if your file structure is different from the default.
+Ensure the paths for user_input.wav and completion_response.mp3 are correctly set in the script to match your file structure. Modify these paths in the script if your file structure is different from the default.

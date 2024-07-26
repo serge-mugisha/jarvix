@@ -4,5 +4,14 @@ playsound
 pygame
 sounddevice
 soundfile
-pyppeteer
 NumPy
+
+# browser GUI interactions
+pyppeteer
+
+# custom models
+transformers
+torch
+
+# chatbot
+pvporcupine
