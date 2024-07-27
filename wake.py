@@ -3,10 +3,19 @@ import pvporcupine
 import sounddevice as sd
 import numpy as np
 
+
 class WakeWordDetector:
     def __init__(self):
         self.access_key = os.getenv('PORCUPINE_ACCESS_KEY')
-        self.keyword_paths = os.getenv('PORCUPINE_KEYWORD_PATHS').split(',')
+
+        # Get keyword paths from a directory in the root folder
+        root_folder = os.path.dirname(os.path.abspath(__file__))
+        keyword_dir = os.path.join(root_folder, '')
+        self.keyword_paths = [os.path.join(keyword_dir, f) for f in os.listdir(keyword_dir) if f.endswith('.ppn')]
+
+        if not self.keyword_paths:
+            raise ValueError("No .ppn files found in the keyword_files directory.")
+
 
         if not self.access_key or not self.keyword_paths:
             raise ValueError("Porcupine access key or keyword paths not found.")
