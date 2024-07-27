@@ -1,14 +1,23 @@
 import os
+from pathlib import Path
+
 import pvporcupine
 import sounddevice as sd
 import numpy as np
 
+
 class WakeWordDetector:
     def __init__(self):
+        self.keyword_paths = None
         self.access_key = os.getenv('PORCUPINE_ACCESS_KEY')
-        # TODO: Fix with Gini
-        # os.getenv('PORCUPINE_KEYWORD_PATHS').split(','))
-        self.keyword_paths = [pvporcupine.KEYWORD_PATHS['bumblebee']]
+        file_path = Path(__file__).parent / "wake_word.ppn"
+        keyword_path = [os.path.normpath(str(file_path.resolve()))]
+        print(f"loading PPN file at: ${keyword_path}")
+        # self.keyword_paths = keyword_path
+
+        if not self.keyword_paths:
+            print("No .ppn files found in the chatbot directory. Defaulting to 'Bumblebee' as a wake word")
+            self.keyword_paths = [pvporcupine.KEYWORD_PATHS['bumblebee']]
 
         if not self.access_key or not self.keyword_paths:
             raise ValueError("Porcupine access key or keyword paths not found.")
