@@ -1,18 +1,19 @@
-python-dotenv
-openai
+python-dotenv~=1.0.1
+openai~=1.35.4
 playsound
-pygame
-sounddevice
-soundfile
-NumPy
+pygame~=2.6.0
+sounddevice~=0.4.7
+soundfile~=0.12.1
+NumPy~=1.26.4
 
 # browser GUI interactions
-pyppeteer
+pyppeteer~=2.0.0
 
 # custom models
-transformers
-torch
-ollama
+transformers~=4.42.4
+torch~=2.3.1
+ollama~=0.3.0
 
 # chatbot
-pvporcupine
+pvporcupine~=3.0.2
+pydantic~=2.7.4

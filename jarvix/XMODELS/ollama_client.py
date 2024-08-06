@@ -1,14 +1,17 @@
+from pydantic import BaseModel
 import ollama
 import subprocess
 import time
 
 
-class OllamaClient:
+class OllamaClient(BaseModel):
     def __init__(self, model_name, word_limit=100):
-        self.model_name = model_name
-        self.word_limit = word_limit
-        self.conversation_history = []
-        self.max_tokens = 4000
+        super().__init__()
+        self.model_name: str = model_name
+        self.word_limit: int = word_limit
+        self.conversation_history: list = []
+        self.max_tokens: int = 4000
+        
 
     def process_text_with_ollama(self, text):
         if not self._is_ollama_running():
