@@ -1,19 +1,18 @@
-from jarvix.XAPI import process_text_with_gpt
-from jarvix.XCHATBOT.chatbot import Chatbot
-from jarvix.XCHATBOT.wake import WakeWordDetector
+import os
+
 from dotenv import load_dotenv
-
+from jarvix.XCHATBOT.wake import WakeWordDetector
+from jarvix.XCHATBOT.chatbot import Chatbot
 from jarvix.XMODELS.ollama_client import OllamaClient
-
-# from jarvix.XGUI import use_chat_gpt_gui
-# from jarvix.utils import record_audio
 
 load_dotenv()
 
 # Main workflow
 if __name__ == "__main__":
+    api_key = os.getenv('OPENAI_API_KEY')
+
     wake_detector = WakeWordDetector()
-    chatbot = Chatbot()
+    chatbot = Chatbot(api_key=api_key)
 
     ollama_client = OllamaClient(model_name="phi3:mini")
 

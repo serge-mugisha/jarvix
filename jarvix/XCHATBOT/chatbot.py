@@ -1,55 +1,63 @@
-import os
-import openai
+from openai import Client
 from pathlib import Path
 import pygame
 import sounddevice as sd
 import soundfile as sf
+from pydantic import BaseModel, Field, field_validator, PrivateAttr
 
 
-class Chatbot:
-    def __init__(self):
-        self.api_key = os.getenv('OPENAI_API_KEY')
-        if not self.api_key:
+class Chatbot(BaseModel):
+    api_key: str = Field(..., env='OPENAI_API_KEY')
+    _client: Client = PrivateAttr()
+    duration: int = 5
+    fs: int = 44100
+    filename: str = 'user_input.wav'
+    tts_model: str = "tts-1"
+    tts_voice: str = "nova"
+    whisper_model: str = "whisper-1"
+
+    @field_validator('api_key', mode='before')
+    def validate_api_key(cls, v):
+        if not v:
             raise ValueError("API Key for OpenAI not found.")
-        self.client = openai.Client(api_key=self.api_key)
+        return v
 
-    def speech_to_text(self, file):
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        self._client = Client(api_key=self.api_key)
+
+    def speech_to_text(self, file: Path) -> str:
         with open(file, "rb") as audio_file:
-            transcription = self.client.audio.transcriptions.create(
-                model="whisper-1",
+            transcription = self._client.audio.transcriptions.create(
+                model=self.whisper_model,
                 file=audio_file
             )
         return transcription.text
 
-    def text_to_speech(self, text):
+    def text_to_speech(self, text: str) -> Path:
         speech_file_path = Path(__file__).parent / "completion_response.mp3"
-        response = self.client.audio.speech.create(
-            model="tts-1",
-            voice="nova",
+        response = self._client.audio.speech.create(
+            model=self.tts_model,
+            voice=self.tts_voice,
             input=text
         )
         response.stream_to_file(speech_file_path)
         return speech_file_path
 
-    def record_audio(self, duration=5, fs=44100, filename='user_input.wav'):
-        """
-        Record audio from the microphone and save it to a file.
-        Args:
-        duration (int): Recording duration in seconds.
-        fs (int): Sampling frequency in Hz.
-        filename (str): Filename to save the recording.
-        """
-        speech_file_path = Path(__file__).parent / filename
+    def record_audio(self) -> Path:
+        speech_file_path = Path(__file__).parent / self.filename
         print("Recording...")
-        # Change 'channels=2' to 'channels=1' for mono recording
-        audio = sd.rec(int(duration * fs), samplerate=fs, channels=1, dtype='float32')
+        audio = sd.rec(int(self.duration * self.fs), samplerate=self.fs, channels=1, dtype='float32')
         sd.wait()
         print("Recording stopped, saving file...")
-        sf.write(speech_file_path, audio, fs)
+        sf.write(speech_file_path, audio, self.fs)
         print(f"File saved as {speech_file_path}")
         return speech_file_path
 
-    def play_audio(self, audio_file_path):
+    def play_audio(self, audio_file_path: Path) -> None:
         pygame.init()
         pygame.mixer.init()
         pygame.mixer.music.load(audio_file_path)
@@ -57,7 +65,7 @@ class Chatbot:
         while pygame.mixer.music.get_busy():
             pygame.time.Clock().tick(10)
 
-    def start_conversation(self, processor):
+    def start_conversation(self, processor: callable) -> None:
         input_audio_path = self.record_audio()
         text = self.speech_to_text(input_audio_path)
         response = processor(text)
