@@ -10,10 +10,10 @@ class WakeWordDetector:
     def __init__(self):
         self.keyword_paths = None
         self.access_key = os.getenv('PORCUPINE_ACCESS_KEY')
-        file_path = Path(__file__).parent / "wake_word.ppn"
+        file_path = Path(__file__).parent / os.getenv('PORCUPINE_FILE_NAME')
         keyword_path = [os.path.normpath(str(file_path.resolve()))]
         print(f"loading PPN file at: ${keyword_path}")
-        # self.keyword_paths = keyword_path
+        self.keyword_paths = keyword_path
 
         if not self.keyword_paths:
             print("No .ppn files found in the chatbot directory. Defaulting to 'Bumblebee' as a wake word")
