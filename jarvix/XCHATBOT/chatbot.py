@@ -3,7 +3,7 @@ from pathlib import Path
 import pygame
 import sounddevice as sd
 import soundfile as sf
-from pydantic import BaseModel, Field, field_validator, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr
 
 
 class Chatbot(BaseModel):
@@ -15,12 +15,6 @@ class Chatbot(BaseModel):
     tts_model: str = "tts-1"
     tts_voice: str = "nova"
     whisper_model: str = "whisper-1"
-
-    @field_validator('api_key', mode='before')
-    def validate_api_key(cls, v):
-        if not v:
-            raise ValueError("API Key for OpenAI not found.")
-        return v
 
     class Config:
         arbitrary_types_allowed = True
