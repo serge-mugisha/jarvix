@@ -4,6 +4,7 @@ playsound
 sounddevice~=0.4.7
 soundfile~=0.12.1
 NumPy~=1.26.4
+anthropic
 
 # browser GUI interactions
 pyppeteer~=2.0.0
