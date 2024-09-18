@@ -10,7 +10,7 @@ load_dotenv()
 
 def select_model():
     while True:
-        model = input("Select a model number: \n 1. GPT \n 2.Claude \n 3.Ollama \n")
+        model = input("Select a model number: \n 1.GPT \n 2.Claude \n 3.Ollama \n")
         if model == "1":
             gpt_api_key = os.getenv('OPENAI_API_KEY')
             api_client = ApiClient(gpt_api_key=gpt_api_key)
@@ -39,16 +39,22 @@ if __name__ == "__main__":
 
     # Ask for model selection before entering the main loop
     selected_model = select_model()
+    selected_mode = input("Select running mode: \n 1.Live \n 2.Test \n")
 
     try:
-        loop = True  # Replace with your own condition to exit the loop
+        loop = True
         while loop:
-            print("Listening for wake word...")
-            if True:
-                # if wake_detector.listen_for_wake_word():
-                print("Wake word detected! Starting conversation...")
+            if selected_mode == "1":
+                print("Listening for wake word...")
+                if wake_detector.listen_for_wake_word():
+                    print("Wake word detected! Starting conversation...")
+                    chatbot.start_conversation(processor=selected_model)
+                    print("Conversation ended. Listening for wake word again...")
+            else:
+                print("Running in test mode...")
                 chatbot.start_conversation(processor=selected_model, test_text="What is 7 * 4 - 3")
-                print("Conversation ended. Listening for wake word again...")
-                loop = False  # Uncomment this line to exit the loop immediately
+                loop = False
+                print("Test Conversation ended.")
+
     except KeyboardInterrupt:
         print("Stopping...")
