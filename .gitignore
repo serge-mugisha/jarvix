@@ -7,6 +7,7 @@ jarvix/XMODELS/models/
 
 # Workspace related
 .idea
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
