@@ -59,7 +59,7 @@ class Chatbot(BaseModel):
             text = self.speech_to_text(input_audio_path)
         response = processor(text)
         output_audio_path = self.text_to_speech(response)
-        playsound(output_audio_path)
+        playsound(str(output_audio_path)) # convert PosixPath to str because playsound 1.2.2 on mac doesn't take PosixPath
 
         output_audio_path.unlink()
         if input_audio_path:
