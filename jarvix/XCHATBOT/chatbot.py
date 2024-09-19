@@ -1,8 +1,8 @@
 from openai import Client
 from pathlib import Path
-import pygame
 import sounddevice as sd
 import soundfile as sf
+from playsound import playsound
 from pydantic import BaseModel, Field, PrivateAttr
 
 
@@ -51,17 +51,16 @@ class Chatbot(BaseModel):
         print(f"File saved as {speech_file_path}")
         return speech_file_path
 
-    def play_audio(self, audio_file_path: Path) -> None:
-        pygame.init()
-        pygame.mixer.init()
-        pygame.mixer.music.load(audio_file_path)
-        pygame.mixer.music.play()
-        while pygame.mixer.music.get_busy():
-            pygame.time.Clock().tick(10)
-
-    def start_conversation(self, processor: callable) -> None:
-        input_audio_path = self.record_audio()
-        text = self.speech_to_text(input_audio_path)
+    def start_conversation(self, processor: callable, test_text: str = None) -> None:
+        text = test_text
+        input_audio_path = None
+        if not test_text:
+            input_audio_path = self.record_audio()
+            text = self.speech_to_text(input_audio_path)
         response = processor(text)
         output_audio_path = self.text_to_speech(response)
-        self.play_audio(output_audio_path)
+        playsound(str(output_audio_path)) # convert PosixPath to str because playsound 1.2.2 on mac doesn't take PosixPath
+
+        output_audio_path.unlink()
+        if input_audio_path:
+            input_audio_path.unlink()

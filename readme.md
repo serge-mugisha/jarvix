@@ -17,7 +17,7 @@ Before you can run this script, make sure you have the following installed:
 
 4.soundfile
 
-5.pygame
+5.playsound
 
 6.python-dotenv
 

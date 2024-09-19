@@ -7,9 +7,9 @@ import time
 
 class OllamaClient(BaseModel):
     model_name: str
-    word_limit: int = 100
+    word_limit: int = 50
     conversation_history: List[Dict[str, str]] = Field(default_factory=list)
-    max_tokens: int = 4000
+    max_tokens: int = 300
 
     class Config:
         protected_namespaces = ()
@@ -21,7 +21,7 @@ class OllamaClient(BaseModel):
             self._start_ollama()
             self._wait_for_ollama()
 
-        prompt_with_limit = f"{text}\n\nPlease respond in no more than {self.word_limit} words."
+        prompt_with_limit = f"{text}.\nPlease respond with direct answers and no more than {self.word_limit} words."
         self.conversation_history.append({"role": "user", "content": prompt_with_limit})
         response = self._send_request_with_history()
 
@@ -42,7 +42,7 @@ class OllamaClient(BaseModel):
 
     def _is_ollama_running(self) -> bool:
         try:
-            response = ollama.chat(model=self.model_name, messages=[])
+            ollama.chat(model=self.model_name, messages=[])
             return True
         except:
             return False
@@ -54,7 +54,3 @@ class OllamaClient(BaseModel):
         print("Waiting for Ollama to start...")
         while not self._is_ollama_running():
             time.sleep(1)
-
-
-# TODO: Delete all audios after using them
-# TODO: First prompt passes and the following one fails. Add logs and run in debug mode
