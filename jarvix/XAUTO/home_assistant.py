@@ -3,7 +3,7 @@ import time
 from enum import Enum
 
 import requests
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
 # Constants for endpoints and actions
@@ -20,6 +20,16 @@ ACTION_SERVICE_MAP = {
     Action.TURN_OFF: 'turn_off',
     Action.TOGGLE: 'toggle',
 }
+
+class EntityType(str, Enum):
+    LIGHT = 'light'
+    SWITCH = 'switch'
+    # PLUG = 'plug'
+
+class HAFunctionInput(BaseModel):
+    action: Action
+    entity_name: str
+    entity_type: Optional[EntityType] = None
 
 
 class Entity(BaseModel):
@@ -83,4 +93,31 @@ class HAClient:
         data = {'entity_id': entity_id}
         response = requests.post(url, headers=self.headers, json=data)
         return response.status_code == 200
+
+    def control_home_device(self, action: str, entity_name: str, entity_type: Optional[str] = None) -> str:
+        entities = self.get_entities()
+
+        # Filter entities based on the entity name and type
+        matching_entities = []
+        for entity in entities:
+            friendly_name = entity.attributes.get('friendly_name', '').lower()
+            if entity_name.lower() in friendly_name:
+                if entity_type:
+                    if entity.entity_id.startswith(entity_type):
+                        matching_entities.append(entity)
+                else:
+                    matching_entities.append(entity)
+
+        if not matching_entities:
+            return f"Sorry, I couldn't find any device named '{entity_name}'."
+        elif len(matching_entities) > 1:
+            return f"I found multiple devices named '{entity_name}'. Please be more specific."
+        else:
+            target_entity = matching_entities[0]
+            success = self.perform_action(entity_id=target_entity.entity_id, action=Action(action))
+            if success:
+                return f"'{target_entity.attributes.get('friendly_name')}' has been '{action.replace('_', ' ')}' successfully."
+            else:
+                return f"Sorry, I couldn't '{action.replace('_', ' ')}' '{target_entity.attributes.get('friendly_name')}'."
+
 

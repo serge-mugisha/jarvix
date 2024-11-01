@@ -3,8 +3,8 @@ openai~=1.35.4
 playsound==1.2.2 # 1.2.2 is more stable on macos. for mac, pyobjc will also need to be installed as a dep
 sounddevice~=0.4.7
 soundfile~=0.12.1
-NumPy~=1.26.4
-anthropic
+NumPy~=1.26.0
+anthropic~=0.34.1
 
 # browser GUI interactions
 pyppeteer~=2.0.0
@@ -20,3 +20,4 @@ pydantic~=2.7.4
 
 # automations
 homeassistant
+requests~=2.32.3
