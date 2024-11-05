@@ -3,11 +3,12 @@
 *.mp3
 *.wav
 jarvix/XGUI/browser/
-jarvix/XMODELS/models/
+jarvix/XMODELS/local_models/
 
 # Workspace related
 .idea
 .vscode
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

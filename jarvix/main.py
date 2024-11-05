@@ -52,7 +52,7 @@ if __name__ == "__main__":
                 print("Running in test mode...")
 
                 # user_input = "What is 4 x 7?"
-                user_input = "Can you turn off the test plug?"
+                user_input = "Can you switch on the test plug?"
                 chatbot.start_conversation(processor=api_client.process_text, test_text=user_input)
 
                 # success = ha_client.perform_action("switch.test_plug", Action.TURN_ON)

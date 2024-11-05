@@ -1,3 +1,5 @@
+import os
+
 from pydantic import BaseModel, Field
 from typing import List, Dict
 import ollama
@@ -6,6 +8,10 @@ import time
 
 from jarvix.XMODELS.function_definitions import function_definitions
 
+CHAT_ROLE_MESSAGE = (
+    "You are an AI System called Jarvix. Your job is to answer every question users ask you no matter what."
+    "You also support in extracting actions and entity names from user commands for use in Home Assistant API through function calling. Use supplied tools to assist the user."
+)
 
 class OllamaClient(BaseModel):
     model_name: str
@@ -25,6 +31,7 @@ class OllamaClient(BaseModel):
             self._wait_for_ollama()
 
         # prompt_with_limit = f"{text}.\nPlease respond with direct answers and no more than {self.word_limit} words."
+        self.conversation_history.append({"role": "system", "content": CHAT_ROLE_MESSAGE})
         self.conversation_history.append({"role": "user", "content": text})
         response = self._send_request_with_history()
 
@@ -72,6 +79,8 @@ class OllamaClient(BaseModel):
             return False
 
     def _start_ollama(self) -> None:
+        custom_model_path = os.path.join(os.getcwd(), 'XMODELS', 'local_models')
+        os.environ['OLLAMA_MODELS'] = custom_model_path # Test that setting an env var like this works
         subprocess.Popen(["ollama", "start"])
 
     def _wait_for_ollama(self) -> None:
