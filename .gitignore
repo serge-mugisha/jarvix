@@ -3,7 +3,7 @@
 *.mp3
 *.wav
 jarvix/XGUI/browser/
-jarvix/XMODELS/local_models/
+jarvix/XMODELS/local_models/*
 
 # Workspace related
 .idea
