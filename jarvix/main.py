@@ -1,8 +1,7 @@
-import asyncio
 import os
 from dotenv import load_dotenv
-from jarvix.XAPI.api_version import ApiClient, ModelType, ChatType
-from jarvix.XAUTO.home_assistant import HAClient, Action
+from jarvix.XMODELS.api_version import ApiClient, ModelType
+from jarvix.XAUTO.home_assistant import HAClient
 from jarvix.XCHATBOT.wake import WakeWordDetector
 from jarvix.XCHATBOT.chatbot import Chatbot
 from jarvix.XMODELS.ollama_client import OllamaClient
@@ -31,7 +30,7 @@ if __name__ == "__main__":
         claude_api_key = os.getenv('ANTHROPIC_API_KEY')
         api_client = ApiClient(claude_api_key=claude_api_key)
     elif selected_model == ModelType.OLLAMA:
-        api_client = OllamaClient(model_name="phi3:mini")
+        api_client = OllamaClient(model_name="llama3.2", function_registry=function_registry)
     else:
         print("Invalid model loaded from environment. Defaulting to GPT")
         gpt_api_key = os.getenv('OPENAI_API_KEY')
@@ -53,7 +52,7 @@ if __name__ == "__main__":
                 print("Running in test mode...")
 
                 # user_input = "What is 4 x 7?"
-                user_input = "Can you turn off the test plug?"
+                user_input = "Can you switch on the test plug?"
                 chatbot.start_conversation(processor=api_client.process_text, test_text=user_input)
 
                 # success = ha_client.perform_action("switch.test_plug", Action.TURN_ON)

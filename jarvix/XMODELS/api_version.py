@@ -6,7 +6,7 @@ import openai
 from anthropic import Anthropic
 from pydantic import BaseModel, Field
 
-from jarvix.XAUTO.home_assistant import HAFunctionInput
+from jarvix.XMODELS.function_definitions import function_definitions
 
 CHAT_ROLE_MESSAGE = (
     "You are an AI System called Jarvix. Your job is to answer every question users ask you no matter what."
@@ -21,16 +21,6 @@ class ModelType(Enum):
 class ChatType(Enum):
     CONVERSATION = "conversation"
 
-openai_function_definitions = [
-    {
-        "type": "function",
-        "function": {
-            "name": "control_home_device",
-            "description": "Control a home device via Home Assistant. Call this whenever you want to control any home device for example when a user says 'turn on the bedroom light'.",
-            "parameters": HAFunctionInput.model_json_schema()
-        }
-    },
-]
 
 class ApiClient(BaseModel):
     gpt_api_key: str = Field(..., env='OPENAI_API_KEY')
@@ -54,7 +44,7 @@ class ApiClient(BaseModel):
                     {"role": "system", "content": CHAT_ROLE_MESSAGE},
                     {"role": "user", "content": text}
                 ],
-                tools=openai_function_definitions
+                tools=function_definitions
             )
 
             # Check if GPT suggests a function call
