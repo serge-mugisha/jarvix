@@ -1,9 +1,13 @@
+from typing import ClassVar
+
 from openai import Client
 from pathlib import Path
 import sounddevice as sd
 import soundfile as sf
 from playsound import playsound
 from pydantic import BaseModel, Field, PrivateAttr
+from faster_whisper import WhisperModel
+
 
 
 class Chatbot(BaseModel):
@@ -14,7 +18,8 @@ class Chatbot(BaseModel):
     filename: str = 'user_input.wav'
     tts_model: str = "tts-1"
     tts_voice: str = "nova"
-    whisper_model: str = "whisper-1"
+    gpt_whisper_model: str = "whisper-1"
+    faster_whisper_model: ClassVar[WhisperModel] = WhisperModel("large-v3", device="cpu", compute_type="int8")
 
     class Config:
         arbitrary_types_allowed = True
@@ -23,13 +28,19 @@ class Chatbot(BaseModel):
         super().__init__(**data)
         self._client = Client(api_key=self.api_key)
 
+    # Use this for OpenAI Whisper which uses API tokens
+    # def speech_to_text(self, file: Path) -> str:
+    #     with open(file, "rb") as audio_file:
+    #         transcription = self._client.audio.transcriptions.create(
+    #             model=self.gpt_whisper_model,
+    #             file=audio_file
+    #         )
+    #     return transcription.text
+
     def speech_to_text(self, file: Path) -> str:
-        with open(file, "rb") as audio_file:
-            transcription = self._client.audio.transcriptions.create(
-                model=self.whisper_model,
-                file=audio_file
-            )
-        return transcription.text
+        segments, _ = self.faster_whisper_model.transcribe(str(file))
+        transcription = ''.join(segment.text for segment in segments)
+        return transcription
 
     def text_to_speech(self, text: str) -> Path:
         speech_file_path = Path(__file__).parent / "completion_response.mp3"

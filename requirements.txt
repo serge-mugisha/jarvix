@@ -17,6 +17,7 @@ ollama~=0.3.0
 # chatbot
 pvporcupine~=3.0.2
 pydantic~=2.7.4
+faster-whisper
 
 # automations
 homeassistant
