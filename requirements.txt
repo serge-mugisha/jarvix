@@ -1,6 +1,6 @@
 python-dotenv~=1.0.1
 openai~=1.35.4
-playsound==1.2.2 # 1.2.2 is more stable on macos. for mac, pyobjc will also need to be installed as a dep
+playsound==1.2.2 # 1.2.2 is more stable on macos. for mac, pyobjc will also need to be installed as a dep | To be removed if pyttsx3 is good enough
 sounddevice~=0.4.7
 soundfile~=0.12.1
 NumPy~=1.26.0
@@ -18,6 +18,7 @@ ollama~=0.3.0
 pvporcupine~=3.0.2
 pydantic~=2.7.4
 faster-whisper
+pyttsx3
 
 # automations
 homeassistant
