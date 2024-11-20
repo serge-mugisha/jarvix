@@ -4,6 +4,7 @@
 *.wav
 jarvix/XGUI/browser/
 jarvix/XMODELS/local_models/*
+jarvix/XAUTO/homeassistant
 
 # Workspace related
 .idea

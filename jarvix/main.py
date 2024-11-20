@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from jarvix.XMODELS.api_version import ApiClient, ModelType
-from jarvix.XAUTO.home_assistant import HAClient
+from jarvix.XAUTO.home_assistant import HAClient, HAInitializer
 from jarvix.XCHATBOT.wake import WakeWordDetector
 from jarvix.XCHATBOT.chatbot import Chatbot
 from jarvix.XMODELS.ollama_client import OllamaClient
@@ -16,7 +16,10 @@ if __name__ == "__main__":
 
     wake_detector = WakeWordDetector()
     chatbot = Chatbot(api_key=gpt_api_key)  # We'll override this with the selected model's API key
-    ha_client = HAClient(base_url=home_assistant_base_url, api_key=home_assistant_api_key)
+    ha_initializer = HAInitializer()
+
+    ha_client = HAClient(base_url=home_assistant_base_url)
+
 
     function_registry = {
         "control_home_device": ha_client.control_home_device,
