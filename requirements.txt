@@ -23,3 +23,4 @@ pyttsx3
 # automations
 homeassistant
 requests~=2.32.3
+pyyaml

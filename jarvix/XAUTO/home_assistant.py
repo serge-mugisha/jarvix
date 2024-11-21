@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from enum import Enum
 
+import yaml
 from pydantic import BaseModel, Field
 import requests
 from dotenv import load_dotenv, set_key
@@ -44,9 +45,19 @@ class HAFunctionInput(BaseModel):
     entity_name: str
     entity_type: Optional[EntityType] = None
 
+class HAConfig(BaseModel):
+    name: str
+    latitude: float
+    longitude: float
+    elevation: int
+    unit_system: str
+    currency: str
+    country: str
+    time_zone: str
+    external_url: str
 
 class HAInitializer:
-    def __init__(self, ha_directory: str = Path(__file__).parent / 'homeassistant'):
+    def __init__(self, ha_directory: str = Path(__file__).parent / 'homeassistant', config: HAConfig = None):
         self.ha_directory = ha_directory
         self.start_command = f'hass --config {self.ha_directory}'
         self.base_url = f"http://{os.getenv('INTERNAL_URL', 'localhost:8123')}"
@@ -57,6 +68,7 @@ class HAInitializer:
         self.debug = os.getenv('DEBUG', False)
         self.headers = {'Content-Type': 'application/json'}
         self.auth_code = os.getenv('HA_AUTH_CODE', None)
+        self.config = config
         self._initialize_home_assistant()
 
     def _initialize_home_assistant(self):
@@ -67,7 +79,8 @@ class HAInitializer:
 
         # Start HA to create necessary files
         subprocess.Popen(self.start_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(10)  # Wait for HA to start (increase if necessary)
+        time.sleep(5)  # Wait for HA to start (increase if necessary)
+        self._create_configuration_file() # Overwrite configuration.yaml with user info
 
         # Wait until HA is live
         if not self._wait_until_ha_is_live():
@@ -75,6 +88,28 @@ class HAInitializer:
 
         # Run onboarding tasks and create a new user
         self._run_onboarding()
+
+    def _create_configuration_file(self):
+        """Create the configuration.yaml file with basic Home Assistant information."""
+        config_path = f"{self.ha_directory}/configuration.yaml"
+        if self.config:
+            config_data = {
+                'homeassistant': {
+                    'name': self.config.name,
+                    'latitude': self.config.latitude,
+                    'longitude': self.config.longitude,
+                    'elevation': self.config.elevation,
+                    'unit_system': self.config.unit_system,
+                    'currency': self.config.currency,
+                    'country': self.config.country,
+                    'time_zone': self.config.time_zone,
+                    'external_url': self.config.external_url,
+                }
+            }
+            with open(config_path, 'w') as config_file:
+                yaml.dump(config_data, config_file)
+        else:
+            raise ValueError("HAConfig object is required to create the configuration.yaml file.")
 
     def _wait_until_ha_is_live(self, timeout: int = 60) -> bool:
         """Wait until Home Assistant is running and responsive."""
