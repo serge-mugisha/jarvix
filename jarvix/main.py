@@ -1,5 +1,7 @@
 import os
 from dotenv import load_dotenv
+from homeassistant.helpers.config_validation import language
+
 from jarvix.XMODELS.api_version import ApiClient, ModelType
 from jarvix.XAUTO.home_assistant import HAClient, HAInitializer, HAConfig
 from jarvix.XCHATBOT.wake import WakeWordDetector
@@ -19,6 +21,9 @@ if __name__ == "__main__":
 
     # initialize home assistant
     has_config = HAConfig(
+        friendly_name="Bob",
+        username="bob",
+        password="root",
         name="Home",
         latitude=32.87336,
         longitude=117.22743,
@@ -27,7 +32,8 @@ if __name__ == "__main__":
         currency="USD",
         country="US",
         time_zone="America/Los_Angeles",
-        external_url="https://www.example.com"
+        external_url="https://www.example.com",
+        language="en"
     )
     ha_initializer = HAInitializer(config=has_config)
     ha_client = HAClient(base_url=home_assistant_base_url)

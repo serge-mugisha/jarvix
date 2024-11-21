@@ -46,6 +46,9 @@ class HAFunctionInput(BaseModel):
     entity_type: Optional[EntityType] = None
 
 class HAConfig(BaseModel):
+    friendly_name: str
+    username: str
+    password: str
     name: str
     latitude: float
     longitude: float
@@ -54,17 +57,13 @@ class HAConfig(BaseModel):
     currency: str
     country: str
     time_zone: str
-    external_url: str
+    language: str
 
 class HAInitializer:
     def __init__(self, ha_directory: str = Path(__file__).parent / 'homeassistant', config: HAConfig = None):
         self.ha_directory = ha_directory
         self.start_command = f'hass --config {self.ha_directory}'
         self.base_url = f"http://{os.getenv('INTERNAL_URL', 'localhost:8123')}"
-        self.external_url = os.getenv('EXTERNAL_URL', self.base_url)
-        self.username = os.getenv('ADMIN_USERNAME', 'admin')
-        self.password = os.getenv('ADMIN_PASSWORD', 'root')
-        self.language = os.getenv('ADMIN_LANGUAGE', 'en')
         self.debug = os.getenv('DEBUG', False)
         self.headers = {'Content-Type': 'application/json'}
         self.auth_code = os.getenv('HA_AUTH_CODE', None)
@@ -103,7 +102,7 @@ class HAInitializer:
                     'currency': self.config.currency,
                     'country': self.config.country,
                     'time_zone': self.config.time_zone,
-                    'external_url': self.config.external_url,
+                    'external_url': self.base_url,
                 }
             }
             with open(config_path, 'w') as config_file:
@@ -154,11 +153,11 @@ class HAInitializer:
         """Create a new user via Home Assistant API."""
         user_url = f"{self.base_url}/api/onboarding/users"
         payload = json.dumps({
-            "client_id": self.external_url,
-            "name": self.username,
-            "username": self.username,
-            "password": self.password,
-            "language": self.language
+            "client_id": self.base_url,
+            "name": self.config.friendly_name,
+            "username": self.config.username,
+            "password": self.config.password,
+            "language": self.config.language
         })
         response = requests.post(user_url, headers=self.headers, data=payload)
         if self.debug:
@@ -176,7 +175,7 @@ class HAInitializer:
         token_url = f"{self.base_url}/auth/token"
         data = {
             "grant_type": "authorization_code",
-            "client_id": self.external_url,
+            "client_id": self.base_url,
             "code": self.auth_code
         }
         response = requests.post(token_url, data=data)
