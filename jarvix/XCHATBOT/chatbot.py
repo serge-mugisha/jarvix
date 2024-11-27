@@ -13,8 +13,8 @@ from jarvix.XCHATBOT.tts import NaturalTTS
 
 
 class Chatbot(BaseModel):
-    api_key: str = Field(..., env='OPENAI_API_KEY')
-    _client: Client = PrivateAttr()
+    # api_key: str = Field(..., env='OPENAI_API_KEY') # Uncomment for Using OpenAI for TTS and STT
+    # _client: Client = PrivateAttr() # Uncomment for Using OpenAI for TTS and STT
     filename: str = 'user_input.wav'
     tts_model: str = "tts-1"
     tts_voice: str = "nova"
@@ -27,7 +27,7 @@ class Chatbot(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        self._client = Client(api_key=self.api_key)
+        # self._client = Client(api_key=self.api_key)
 
     # Use this for OpenAI Whisper which uses API tokens
     # def speech_to_text(self, file: Path) -> str:

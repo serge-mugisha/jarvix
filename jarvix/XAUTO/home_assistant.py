@@ -69,6 +69,7 @@ class HAInitializer:
         self.auth_code = os.getenv('HA_AUTH_CODE', None)
         self.config = config
         self._initialize_home_assistant()
+        set_key(Path(__file__).parents[2] / '.env', 'IS_HA_CONFIGURED', 'True')
 
     def _initialize_home_assistant(self):
         """Initialize Home Assistant and configure necessary settings."""
@@ -227,9 +228,9 @@ class HAInitializer:
 
 
 class HAClient:
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str = "http://localhost:8123"):
+        print(f"Initializing Home Assistant on: {base_url}")
         load_dotenv(override=True) # This is to ensure we get updated refresh token as its been updated during HAInitializer
-
         self.base_url = base_url.rstrip('/')
         self.refresh_token = os.getenv('HA_REFRESH_TOKEN', None)
         self.ha_token = None
