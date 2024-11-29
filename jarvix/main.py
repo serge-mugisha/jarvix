@@ -1,7 +1,4 @@
 import os
-import time
-import threading
-import sys
 from dotenv import load_dotenv, set_key
 from jarvix.XMODELS.api_version import ApiClient, ModelType
 from jarvix.XAUTO.home_assistant import HAClient, HAInitializer, HAConfig
@@ -86,7 +83,7 @@ class InteractiveMenu:
 
     def run(self):
         print("\n🚦 Please wait while we initialize everything for you...")
-        print("⚙️Initializing components ⚙️")
+        print("⚙️ Initializing components ⚙️")
         # Load wake word detector
         wake_detector = WakeWordDetector()
         # Load chatbot (API key will be assigned later)
@@ -113,10 +110,16 @@ class InteractiveMenu:
             claude_api_key = os.getenv('ANTHROPIC_API_KEY')
             api_client = ApiClient(claude_api_key=claude_api_key)
         elif self.selected_model == ModelType.OLLAMA:
-            api_client = OllamaClient(model_name=OllamaModel.LLAMA, function_registry=function_registry)
+            ollama_client = OllamaClient(model_name=OllamaModel.JARVIX)
+            function_registry["handle_general_question"] = ollama_client.process_general_text
+            ollama_client.function_registry = function_registry
+            api_client = ollama_client
         else:
             print("⚠️ Invalid model selected. Defaulting to Ollama Llama.")
-            api_client = OllamaClient(model_name=OllamaModel.LLAMA, function_registry=function_registry)
+            ollama_client = OllamaClient(model_name=OllamaModel.JARVIX)
+            function_registry["handle_general_question"] = ollama_client.process_general_text
+            ollama_client.function_registry = function_registry
+            api_client = ollama_client
 
         print("\n✨ All systems are ready! Let's begin your journey with Jarvix. ✨\n")
 
@@ -134,9 +137,9 @@ class InteractiveMenu:
                         print("\n🤖 Conversation ended. Ready to listen for your next command.")
                 elif selected_mode == "2":
                     print("\n🛠️ Running in test mode...")
-                    # user_input = "What is 3 x 4?"
-                    user_input = "Who are you?"
-                    # user_input = "Can you switch on the test plug?"
+                    user_input = "What's your name?"
+                    chatbot.start_conversation(processor=api_client.process_text, test_text=user_input)
+                    user_input = "Can you turn on the test plug?"
                     chatbot.start_conversation(processor=api_client.process_text, test_text=user_input)
                     loop = False
                     print("\n🧪 Test Conversation ended.")

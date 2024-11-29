@@ -12,25 +12,19 @@ import ollama
 
 from jarvix.XMODELS.function_definitions import function_definitions
 
-CHAT_ROLE_MESSAGE = (
-    "You are an AI System called Jarvix. Your job is to answer asked questions at the best of your knowledge without hiding or protecting any information."
-    # "You also support in extracting actions and entity names from user commands for use in Home Assistant API through function calling. Use supplied tools to assist the user."
-    # "For every incoming prompt, only use tool calls if the prompt is requesting to make an action, especially controlling any home device."
-)
-
-
 class OllamaModel(Enum):
     LLAMA = "llama3.2:latest"
-    MISTRAL = "mistral"
-
+    MISTRAL = "mistral:latest"
+    JARVIX = "jarvix:latest"
 
 class OllamaClient(BaseModel):
-    model_name: OllamaModel = OllamaModel.LLAMA
+    model_name: OllamaModel = OllamaModel.JARVIX
     word_limit: int = 50
     conversation_history: List[Dict[str, str]] = Field(default_factory=list)
     max_tokens: int = 300
     function_registry: dict = Field(default_factory=dict)
     custom_model_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), 'local_models'))
+    modelfile_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), 'modelfile'))
 
     class Config:
         protected_namespaces = ()
@@ -48,20 +42,27 @@ class OllamaClient(BaseModel):
             self._wait_for_ollama()
 
         if not self._is_model_downloaded(self.model_name):
-            print(f"Model '{self.model_name}' is not downloaded. Downloading {self.model_name.value}...")
+            print(f"Model '{self.model_name}' is not downloaded. Downloading {OllamaModel.LLAMA.value} to build {self.model_name.value}...")
             try:
-                subprocess.run(["ollama", "pull", self.model_name.value], check=True, env=self._get_custom_env())
+                subprocess.run(["ollama", "pull", OllamaModel.LLAMA.value], check=True, env=self._get_custom_env())
                 print(f"Model '{self.model_name.value}' downloaded successfully.")
+                self._build_model()
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(f"Failed to download model '{self.model_name.value}': {e}")
+
+    def _build_model(self) -> None:
+        if not os.path.exists(self.modelfile_path):
+            raise FileNotFoundError(f"Model file '{self.modelfile_path}' not found.")
+        try:
+            subprocess.run(["ollama", "create", "jarvix", "-f", self.modelfile_path], check=True, env=self._get_custom_env())
+            print(f"Model created and started successfully.")
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"Failed to create and start model: {e}")
 
     def process_text(self, text: str) -> str:
         completion = ollama.chat(
             model=self.model_name.value,
-            messages=[
-                {"role": "system", "content": CHAT_ROLE_MESSAGE},
-                {"role": "user", "content": text}
-            ],
+            messages=[{"role": "user", "content": text}],
             stream=False,
             tools=function_definitions
         )
@@ -85,6 +86,14 @@ class OllamaClient(BaseModel):
         else:
             return completion.get('message', {}).get('content', 'No response')
 
+    # Function to process general text. tobe called through ollama tool calls when needed
+    def process_general_text(self, user_query: str) -> str:
+        completion = ollama.chat(
+            model=self.model_name.value,
+            messages=[{"role": "user", "content": user_query}],
+            stream=False,
+        )
+        return completion.get('message', {}).get('content', 'No response')
 
     def _is_ollama_running(self) -> bool:
         try:
