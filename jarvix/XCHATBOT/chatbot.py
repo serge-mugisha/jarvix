@@ -18,6 +18,7 @@ class Chatbot(BaseModel):
     filename: str = 'user_input.wav'
     tts_model: str = "tts-1"
     tts_voice: str = "nova"
+    silence_duration: float = 1.3 # 3 seconds for natural pauses
     gpt_whisper_model: str = "whisper-1"
     faster_whisper_model: ClassVar[WhisperModel] = WhisperModel("large-v3", device="cpu", compute_type="int8")
     tts: ClassVar[NaturalTTS] = NaturalTTS()
@@ -61,7 +62,6 @@ class Chatbot(BaseModel):
         chunk_samples = int(sample_rate * chunk_duration)
 
         # Updated parameters for natural conversation
-        silence_duration = 2.0  # 3 seconds for natural pauses
         silence_threshold = 0.02  # Slightly lower threshold
         min_duration = 1.0
         max_duration = 30
@@ -108,7 +108,7 @@ class Chatbot(BaseModel):
                     break
 
                 if has_detected_sound and recording_duration >= min_duration:
-                    if silence_counter >= silence_duration:
+                    if silence_counter >= self.silence_duration:
                         print("\nLong silence detected - ending recording")
                         break
 
