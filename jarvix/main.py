@@ -116,31 +116,41 @@ class InteractiveMenu:
         print("\n✨ All systems are ready! Let's begin your journey with Jarvix. ✨\n")
 
         # Select Running Mode
-        print("\nChoose how you want to proceed:")
-        selected_mode = input("1. Live Mode - Interact in real-time. \n2. Test Mode - Quick test for functionality.\nEnter your choice (1/2): ")
-        try:
-            loop = True
-            while loop:
-                if selected_mode == "1":
+        if os.getenv('TEST_MODE', 'false').lower() == 'true':
+            print("\nChoose how you want to proceed:")
+            selected_mode = input("1. Live Mode - Interact in real-time. \n2. Test Mode - Quick test for functionality.\nEnter your choice (1/2): ")
+            try:
+                loop = True
+                while loop:
+                    if selected_mode == "1":
+                        print("\n🎙️ Listening for your wake word... Say 'Hey Jarvix' to start interacting!")
+                        if wake_detector.listen_for_wake_word():
+                            print("\n💬 Wake word detected! Let's chat...")
+                            chatbot.start_conversation(processor=api_client.process_text)
+                            print("\n🤖 Conversation ended. Ready to listen for your next command.")
+                    elif selected_mode == "2":
+                        print("\n🛠️ Running in test mode...")
+                        user_input = "What's your name?"
+                        chatbot.start_conversation(processor=api_client.process_text, test_text=user_input)
+                        user_input = "Can you turn on the test plug?"
+                        chatbot.start_conversation(processor=api_client.process_text, test_text=user_input)
+                        loop = False
+                        print("\n🧪 Test Conversation ended.")
+                    else:
+                        print("⚠️ Invalid mode selected. Exiting setup.")
+                        loop = False
+            except KeyboardInterrupt:
+                print("\n🛑 Stopping... Goodbye!")
+        else:
+            try:
+                while True:
                     print("\n🎙️ Listening for your wake word... Say 'Hey Jarvix' to start interacting!")
                     if wake_detector.listen_for_wake_word():
                         print("\n💬 Wake word detected! Let's chat...")
                         chatbot.start_conversation(processor=api_client.process_text)
                         print("\n🤖 Conversation ended. Ready to listen for your next command.")
-                elif selected_mode == "2":
-                    print("\n🛠️ Running in test mode...")
-                    user_input = "What's your name?"
-                    chatbot.start_conversation(processor=api_client.process_text, test_text=user_input)
-                    user_input = "Can you turn on the test plug?"
-                    chatbot.start_conversation(processor=api_client.process_text, test_text=user_input)
-                    loop = False
-                    print("\n🧪 Test Conversation ended.")
-                else:
-                    print("⚠️ Invalid mode selected. Exiting setup.")
-                    loop = False
-        except KeyboardInterrupt:
-            print("\n🛑 Stopping... Goodbye!")
-
+            except KeyboardInterrupt:
+                print("\n🛑 Stopping... Goodbye!")
 if __name__ == "__main__":
     menu = InteractiveMenu()
     menu.setup_configuration()
