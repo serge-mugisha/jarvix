@@ -44,7 +44,7 @@ class InteractiveMenu:
             self.selected_model = ModelType.OLLAMA
 
         # Checking if Home Assistant has already been configured
-        is_ha_configured = os.getenv('IS_HA_CONFIGURED', 'False').lower() == 'true'
+        is_ha_configured = os.getenv('IS_HA_CONFIGURED', False).lower() == 'true'
         if not is_ha_configured:
             # Asking the user if they want to set up Home Assistant
             setup_ha = input("\n🏠 Jarvix can integrate with Home Assistant to control your smart devices. Would you like to set it up now? (yes/no): ")
@@ -130,7 +130,7 @@ class InteractiveMenu:
             loop = True
             while loop:
                 if selected_mode == "1":
-                    print("\n🎙️ Listening for your wake word... Say the magic word to start interacting!")
+                    print("\n🎙️ Listening for your wake word... Say 'Hey Jarvix' to start interacting!")
                     if wake_detector.listen_for_wake_word():
                         print("\n💬 Wake word detected! Let's chat...")
                         chatbot.start_conversation(processor=api_client.process_text)

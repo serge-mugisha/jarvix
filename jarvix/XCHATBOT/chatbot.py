@@ -1,3 +1,5 @@
+import logging
+import os
 import time
 from collections import deque
 from typing import ClassVar
@@ -10,6 +12,14 @@ import soundfile as sf
 from pydantic import BaseModel, Field, PrivateAttr
 from faster_whisper import WhisperModel
 from jarvix.XCHATBOT.tts import NaturalTTS
+from jarvix.utils.printer import debug_print
+
+if os.getenv('LOGGING', 'false').lower() == 'true':
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
 
 
 class Chatbot(BaseModel):
@@ -104,7 +114,7 @@ class Chatbot(BaseModel):
 
                 # Stop conditions
                 if recording_duration >= max_duration:
-                    print("\nMaximum duration reached")
+                    debug_print("\nMaximum duration reached")
                     break
 
                 if has_detected_sound and recording_duration >= min_duration:
@@ -112,10 +122,10 @@ class Chatbot(BaseModel):
                         print("\nLong silence detected - ending recording")
                         break
 
-        print("\nRecording stopped, saving file...")
+        debug_print("\nRecording stopped, saving file...")
         audio = np.concatenate(frames)
         sf.write(speech_file_path, audio, sample_rate)
-        print(f"File saved as {speech_file_path}")
+        debug_print(f"File saved as {speech_file_path}")
 
         return speech_file_path
 

@@ -1,3 +1,4 @@
+import logging
 import os
 import threading
 import subprocess
@@ -8,9 +9,17 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 from typing import List, Dict
-import ollama
-
 from jarvix.XMODELS.function_definitions import function_definitions
+import ollama
+from jarvix.utils.printer import debug_print
+
+if os.getenv('LOGGING', 'false').lower() == 'true':
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
+
 
 class OllamaModel(Enum):
     LLAMA = "llama3.2:latest"
@@ -33,19 +42,19 @@ class OllamaClient(BaseModel):
     def __init__(self, **data):
         super().__init__(**data)
         if not self._is_ollama_installed():
-            print("Ollama is not installed. Installing Ollama...")
+            debug_print("Ollama is not installed. Installing Ollama...")
             self._install_ollama()
 
         if not self._is_ollama_running():
-            print("Ollama is not running. Starting Ollama...")
+            debug_print("Ollama is not running. Starting Ollama...")
             self._start_ollama()
             self._wait_for_ollama()
 
         if not self._is_model_downloaded(self.model_name):
-            print(f"Model '{self.model_name}' is not downloaded. Downloading {OllamaModel.LLAMA.value} to build {self.model_name.value}...")
+            debug_print(f"Model '{self.model_name}' is not downloaded. Downloading {OllamaModel.LLAMA.value} to build {self.model_name.value}...")
             try:
                 subprocess.run(["ollama", "pull", OllamaModel.LLAMA.value], check=True, env=self._get_custom_env())
-                print(f"Model '{self.model_name.value}' downloaded successfully.")
+                debug_print(f"Model '{self.model_name.value}' downloaded successfully.")
                 self._build_model()
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(f"Failed to download model '{self.model_name.value}': {e}")
@@ -55,7 +64,7 @@ class OllamaClient(BaseModel):
             raise FileNotFoundError(f"Model file '{self.modelfile_path}' not found.")
         try:
             subprocess.run(["ollama", "create", "jarvix", "-f", self.modelfile_path], check=True, env=self._get_custom_env())
-            print(f"Model created and started successfully.")
+            debug_print(f"Model created and started successfully.")
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Failed to create and start model: {e}")
 
@@ -100,7 +109,7 @@ class OllamaClient(BaseModel):
             result = subprocess.run(["lsof", "-i", ":11434"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             return result.returncode == 0
         except Exception as e:
-            print(f"Error while checking if Ollama is running: {e}")
+            debug_print(f"Error while checking if Ollama is running: {e}")
             return False
 
     def _start_ollama(self) -> None:
@@ -117,7 +126,7 @@ class OllamaClient(BaseModel):
         )
 
     def _wait_for_ollama(self) -> None:
-        print("Waiting for Ollama to start...")
+        debug_print("Waiting for Ollama to start...")
         while not self._is_ollama_running():
             time.sleep(1)
 
@@ -127,7 +136,7 @@ class OllamaClient(BaseModel):
             available_models = [model['name'] for model in response.get('models', [])]
             return model_name.value in available_models
         except Exception as e:
-            print(f"Error while checking models: {e}")
+            debug_print(f"Error while checking models: {e}")
             return False
 
     def _is_ollama_installed(self) -> bool:
