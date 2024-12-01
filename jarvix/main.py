@@ -52,31 +52,23 @@ class InteractiveMenu:
                 print("\n🏠 Great! Let's configure your Home Assistant:")
                 print("Please provide the following details to set up your smart home integration.")
                 friendly_name = input("🏷️ Friendly Name (e.g., Bob's Home): ")
-                username = input("👤 Home Assistant Username: ")
-                password = input("🔒 Home Assistant Password: ")
-                name = input("🏠 Home Assistant Name: ")
-                latitude = float(input("🌍 Latitude: "))
-                longitude = float(input("🌍 Longitude: "))
-                elevation = int(input("📏 Elevation (in meters): "))
-                unit_system = input("📐 Unit System (metric/imperial): ")
-                currency = input("💵 Currency (e.g., USD): ")
-                country = input("🌎 Country (e.g., US): ")
-                time_zone = input("⏰ Time Zone (e.g., America/Los_Angeles): ")
-                language = input("🗣️ Language (e.g., en): ")
+                username = input("👤 Home Assistant Username (Will later be used for authentication to Home Assistant): ")
+                password = input("🔒 Home Assistant Password (Will later be used for authentication to Home Assistant): ")
 
+                # TODO: Ask for an address and grab all geo info from it
                 self.home_assistant_config = HAConfig(
                     friendly_name=friendly_name,
                     username=username,
                     password=password,
-                    name=name,
-                    latitude=latitude,
-                    longitude=longitude,
-                    elevation=elevation,
-                    unit_system=unit_system,
-                    currency=currency,
-                    country=country,
-                    time_zone=time_zone,
-                    language=language
+                    name=friendly_name,
+                    latitude=0,
+                    longitude=0,
+                    elevation=0,
+                    unit_system='metric',
+                    currency='USD',
+                    country='US',
+                    time_zone='EST',
+                    language='en'
                 )
             else:
                 print("\n👍 Skipping Home Assistant setup. You can configure it later if you wish.")

@@ -24,7 +24,6 @@ if os.getenv('LOGGING', 'false').lower() == 'true':
     )
     logger = logging.getLogger(__name__)
 
-
 # Constants for endpoints and actions
 ENTITY_ENDPOINT = '/api/states'
 SERVICE_ENDPOINT_TEMPLATE = '/api/services/{domain}/{service}'
@@ -43,7 +42,6 @@ ACTION_SERVICE_MAP = {
 class EntityType(str, Enum):
     LIGHT = 'light'
     SWITCH = 'switch'
-
 
 class Entity(BaseModel):
     entity_id: str
@@ -68,6 +66,9 @@ class HAConfig(BaseModel):
     country: str
     time_zone: str
     language: str
+
+class HaAuthenticationException(Exception):
+    pass
 
 class HAInitializer:
     def __init__(self, ha_directory: str = Path(__file__).parent / 'homeassistant', config: HAConfig = None):
@@ -259,7 +260,7 @@ class HAClient:
         """Get a valid token, refreshing or generating a new one if necessary."""
         if self.ha_token is None or datetime.now() >= self.ha_token["expires_in"]:
             if not self.refresh_token:
-                raise Exception("No refresh token found in the environment.")
+                raise HaAuthenticationException("No refresh token found in the environment.")
 
             token_url = f"{self.base_url}/auth/token"
             data = {
@@ -274,12 +275,12 @@ class HAClient:
                 self.ha_token["expires_in"] = datetime.now() + timedelta(seconds=self.ha_token["expires_in"])
                 self.headers['Authorization'] = f"Bearer {self.ha_token['access_token']}"
             else:
-                raise Exception("Failed to obtain a valid access token.")
+                raise HaAuthenticationException("Failed to obtain a valid access token.")
 
         if self.ha_token:
             return self.ha_token["access_token"]
         else:
-            raise Exception("Unable to obtain a valid access token.")
+            raise HaAuthenticationException("Unable to obtain a valid access token.")
 
     def start_home_assistant(self) -> None:
         """Start Home Assistant by running a subprocess."""
@@ -318,27 +319,30 @@ class HAClient:
         return response.status_code == 200
 
     def control_home_device(self, action: str, entity_name: str, entity_type: Optional[str] = None) -> str:
-        entities = self.get_entities()
+        try:
+            entities = self.get_entities()
 
-        # Filter entities based on the entity name and type
-        matching_entities = []
-        for entity in entities:
-            friendly_name = entity.attributes.get('friendly_name', '').lower()
-            if entity_name.lower() in friendly_name:
-                if entity_type:
-                    if entity.entity_id.startswith(entity_type):
+            # Filter entities based on the entity name and type
+            matching_entities = []
+            for entity in entities:
+                friendly_name = entity.attributes.get('friendly_name', '').lower()
+                if entity_name.lower() in friendly_name:
+                    if entity_type:
+                        if entity.entity_id.startswith(entity_type):
+                            matching_entities.append(entity)
+                    else:
                         matching_entities.append(entity)
-                else:
-                    matching_entities.append(entity)
 
-        if not matching_entities:
-            return f"Sorry, I couldn't find any device named '{entity_name}'."
-        elif len(matching_entities) > 1:
-            return f"I found multiple devices named '{entity_name}'. Please be more specific."
-        else:
-            target_entity = matching_entities[0]
-            success = self.perform_action(entity_id=target_entity.entity_id, action=Action(action))
-            if success:
-                return f"'{target_entity.attributes.get('friendly_name')}' has been '{action.replace('_', ' ')}' successfully."
+            if not matching_entities:
+                return f"Sorry, I couldn't find any device named '{entity_name}'."
+            elif len(matching_entities) > 1:
+                return f"I found multiple devices named '{entity_name}'. Please be more specific."
             else:
-                return f"Sorry, I couldn't '{action.replace('_', ' ')}' '{target_entity.attributes.get('friendly_name')}'."
+                target_entity = matching_entities[0]
+                success = self.perform_action(entity_id=target_entity.entity_id, action=Action(action))
+                if success:
+                    return f"'{target_entity.attributes.get('friendly_name')}' has been '{action.replace('_', ' ')}' successfully."
+                else:
+                    return f"Sorry, I couldn't '{action.replace('_', ' ')}' '{target_entity.attributes.get('friendly_name')}'."
+        except HaAuthenticationException as e:
+            return f"I'm not authenticated to Home Assistant. Please reset your Home Assistant and try again. {str(e)}"
