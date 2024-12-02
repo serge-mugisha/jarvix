@@ -6,9 +6,6 @@ soundfile~=0.12.1
 NumPy~=1.26.0
 anthropic~=0.34.1
 
-# browser GUI interactions
-pyppeteer~=2.0.0
-
 # custom models
 transformers~=4.42.4
 torch~=2.3.1
