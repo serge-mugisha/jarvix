@@ -1,4 +1,4 @@
-from jarvix.XAUTO.home_assistant import HAFunctionInput
+from XAUTO.home_assistant import HAFunctionInput
 
 function_definitions = [
     {

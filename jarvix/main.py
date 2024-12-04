@@ -1,11 +1,11 @@
 import os
-from dotenv import load_dotenv, set_key
-from jarvix.XMODELS.api_version import ApiClient, ModelType
-from jarvix.XAUTO.home_assistant import HAClient, HAInitializer, HAConfig
-from jarvix.XCHATBOT.wake import WakeWordDetector
-from jarvix.XCHATBOT.chatbot import Chatbot
-from jarvix.XMODELS.ollama_client import OllamaClient, OllamaModel
+from XCHATBOT.chatbot import Chatbot
+from XCHATBOT.wake import WakeWordDetector
+from XMODELS.api_version import ModelType, ApiClient
+from XMODELS.ollama_client import OllamaClient, OllamaModel
+from XAUTO.home_assistant import HAConfig, HAInitializer, HAClient
 
+from dotenv import load_dotenv, set_key
 load_dotenv()
 
 class InteractiveMenu:

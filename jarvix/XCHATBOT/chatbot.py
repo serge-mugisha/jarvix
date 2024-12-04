@@ -4,15 +4,15 @@ import time
 from collections import deque
 from typing import ClassVar
 
-import numpy as np
-from openai import Client
 from pathlib import Path
-import sounddevice as sd
 import soundfile as sf
-from pydantic import BaseModel, Field, PrivateAttr
+import sounddevice as sd
+from pydantic import BaseModel
 from faster_whisper import WhisperModel
-from jarvix.XCHATBOT.tts import NaturalTTS
-from jarvix.utils.printer import debug_print
+import numpy as np
+
+from UTILS.printer import debug_print
+from XCHATBOT.tts import NaturalTTS
 
 if os.getenv('LOGGING', 'false').lower() == 'true':
     logging.basicConfig(

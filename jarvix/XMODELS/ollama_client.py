@@ -9,9 +9,9 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 from typing import List, Dict
-from jarvix.XMODELS.function_definitions import function_definitions
+from XMODELS.function_definitions import function_definitions
 import ollama
-from jarvix.utils.printer import debug_print
+from UTILS.printer import debug_print
 
 if os.getenv('LOGGING', 'false').lower() == 'true':
     logging.basicConfig(

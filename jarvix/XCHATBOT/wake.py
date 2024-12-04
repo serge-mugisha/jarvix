@@ -5,7 +5,7 @@ from pathlib import Path
 import pvporcupine
 import sounddevice as sd
 import numpy as np
-from jarvix.utils.printer import debug_print
+from UTILS.printer import debug_print
 
 if os.getenv('LOGGING', 'false').lower() == 'true':
     logging.basicConfig(

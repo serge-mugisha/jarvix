@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 import requests
 from dotenv import load_dotenv, set_key
 from datetime import datetime, timedelta
-from jarvix.utils.printer import debug_print
+from UTILS.printer import debug_print
 
 # Load environment variables
 load_dotenv()
