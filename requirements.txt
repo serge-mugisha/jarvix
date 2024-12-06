@@ -5,6 +5,7 @@ sounddevice~=0.4.7
 soundfile~=0.12.1
 NumPy~=1.26.0
 anthropic~=0.34.1
+pyinstaller
 
 # custom models
 transformers~=4.42.4
