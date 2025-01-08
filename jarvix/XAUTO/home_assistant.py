@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import subprocess
 import time
@@ -11,9 +12,17 @@ from pydantic import BaseModel, Field
 import requests
 from dotenv import load_dotenv, set_key
 from datetime import datetime, timedelta
+from UTILS.printer import debug_print
 
 # Load environment variables
 load_dotenv()
+
+if os.getenv('LOGGING', 'false').lower() == 'true':
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
 
 # Constants for endpoints and actions
 ENTITY_ENDPOINT = '/api/states'
@@ -33,7 +42,6 @@ ACTION_SERVICE_MAP = {
 class EntityType(str, Enum):
     LIGHT = 'light'
     SWITCH = 'switch'
-
 
 class Entity(BaseModel):
     entity_id: str
@@ -59,16 +67,19 @@ class HAConfig(BaseModel):
     time_zone: str
     language: str
 
+class HaAuthenticationException(Exception):
+    pass
+
 class HAInitializer:
     def __init__(self, ha_directory: str = Path(__file__).parent / 'homeassistant', config: HAConfig = None):
         self.ha_directory = ha_directory
         self.start_command = f'hass --config {self.ha_directory}'
         self.base_url = f"http://{os.getenv('INTERNAL_URL', 'localhost:8123')}"
-        self.debug = os.getenv('DEBUG', False)
         self.headers = {'Content-Type': 'application/json'}
         self.auth_code = os.getenv('HA_AUTH_CODE', None)
         self.config = config
         self._initialize_home_assistant()
+        set_key(Path(__file__).parents[2] / '.env', 'IS_HA_CONFIGURED', 'True')
 
     def _initialize_home_assistant(self):
         """Initialize Home Assistant and configure necessary settings."""
@@ -133,10 +144,10 @@ class HAInitializer:
                 onboarding_data = onboarding_json.get("data", "")
                 if onboarding_data:
                     self.done_list = onboarding_data.get("done", [])
-                    print("Current onboarding done list:", self.done_list)
+                    debug_print("Current onboarding done list:", self.done_list)
         else:
             self.done_list = []
-            print(f"{self.ha_directory}/.storage/onboarding file does not exist. Proceeding with onboarding.")
+            debug_print(f"{self.ha_directory}/.storage/onboarding file does not exist. Proceeding with onboarding.")
 
         # Create a new user via API if not already created
         if "user" not in self.done_list:
@@ -160,14 +171,13 @@ class HAInitializer:
             "language": self.config.language
         })
         response = requests.post(user_url, headers=self.headers, data=payload)
-        if self.debug:
-            print(response.text)
+        debug_print(response.text)
 
         if response.status_code == 200:
             self.auth_code = response.json().get("auth_code", "")
             return True
         else:
-            print("Failed to create user. Response was:", response.text)
+            debug_print("Failed to create user. Response was:", response.text)
             return False
 
     def _create_token(self):
@@ -179,8 +189,7 @@ class HAInitializer:
             "code": self.auth_code
         }
         response = requests.post(token_url, data=data)
-        if self.debug:
-            print(response.text)
+        debug_print(response.text)
 
         if response.status_code == 200:
             access_token = response.json().get("access_token", "")
@@ -189,19 +198,19 @@ class HAInitializer:
                 self.headers['Authorization'] = f"Bearer {access_token}"
                 set_key(Path(__file__).parents[2] / '.env', 'HA_REFRESH_TOKEN', refresh_token)
             else:
-                print("Failed to retrieve access token. Response was:", response.text)
+                debug_print("Failed to retrieve access token. Response was:", response.text)
         else:
-            print("Failed to obtain access token. Response was:", response.text)
+            debug_print("Failed to obtain access token. Response was:", response.text)
 
     def _run_core_config(self):
         """Run the core configuration step of onboarding."""
         if "core_config" not in self.done_list:
             core_config_url = f"{self.base_url}/api/onboarding/core_config"
             response = requests.post(core_config_url, headers=self.headers)
-            if self.debug:
-                print(response.text)
+
+            debug_print(response.text)
         else:
-            print("Core config onboarding task has already been run.")
+            debug_print("Core config onboarding task has already been run.")
 
     # TODO: This is always returning 400 - see how we can fix this
     # TODO: Check out https://community.home-assistant.io/t/how-to-add-new-user-with-command-line-or-even-to-change-user-password-with-command-line/158730/12?u=jarvix
@@ -210,26 +219,24 @@ class HAInitializer:
         if "integration" not in self.done_list:
             integration_url = f"{self.base_url}/api/onboarding/integration"
             response = requests.post(integration_url, headers=self.headers)
-            if self.debug:
-                print(response.text)
+            debug_print(response.text)
         else:
-            print("Integration onboarding task has already been run.")
+            debug_print("Integration onboarding task has already been run.")
 
     def _run_analytics_config(self):
         """Run the analytics configuration step of onboarding."""
         if "analytics" not in self.done_list:
             analytics_url = f"{self.base_url}/api/onboarding/analytics"
             response = requests.post(analytics_url, headers=self.headers)
-            if self.debug:
-                print(response.text)
+            debug_print(response.text)
         else:
-            print("Analytics onboarding task has already been run.")
+            debug_print("Analytics onboarding task has already been run.")
 
 
 class HAClient:
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str = "http://localhost:8123"):
+        debug_print(f"Initializing Home Assistant on: {base_url}")
         load_dotenv(override=True) # This is to ensure we get updated refresh token as its been updated during HAInitializer
-
         self.base_url = base_url.rstrip('/')
         self.refresh_token = os.getenv('HA_REFRESH_TOKEN', None)
         self.ha_token = None
@@ -253,7 +260,7 @@ class HAClient:
         """Get a valid token, refreshing or generating a new one if necessary."""
         if self.ha_token is None or datetime.now() >= self.ha_token["expires_in"]:
             if not self.refresh_token:
-                raise Exception("No refresh token found in the environment.")
+                raise HaAuthenticationException("No refresh token found in the environment.")
 
             token_url = f"{self.base_url}/auth/token"
             data = {
@@ -268,27 +275,27 @@ class HAClient:
                 self.ha_token["expires_in"] = datetime.now() + timedelta(seconds=self.ha_token["expires_in"])
                 self.headers['Authorization'] = f"Bearer {self.ha_token['access_token']}"
             else:
-                raise Exception("Failed to obtain a valid access token.")
+                raise HaAuthenticationException("Failed to obtain a valid access token.")
 
         if self.ha_token:
             return self.ha_token["access_token"]
         else:
-            raise Exception("Unable to obtain a valid access token.")
+            raise HaAuthenticationException("Unable to obtain a valid access token.")
 
     def start_home_assistant(self) -> None:
         """Start Home Assistant by running a subprocess."""
-        print("Home Assistant is not running, starting it now...")
+        debug_print("Home Assistant is not running, starting it now...")
         subprocess.Popen(['hass'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def wait_until_ha_is_live(self, timeout: int = 60) -> None:
         """Wait until Home Assistant is running and responsive."""
-        print("Waiting for Home Assistant to start...")
+        debug_print("Waiting for Home Assistant to start...")
         start_time = time.time()
         while not self.is_ha_running():
             if time.time() - start_time > timeout:
                 raise TimeoutError("Home Assistant did not start within the given time limit.")
             time.sleep(2)  # Check every 2 seconds
-        print("Home Assistant is live!")
+        debug_print("Home Assistant is live!")
 
     def get_entities(self) -> List[Entity]:
         url = f"{self.base_url}{ENTITY_ENDPOINT}"
@@ -312,27 +319,30 @@ class HAClient:
         return response.status_code == 200
 
     def control_home_device(self, action: str, entity_name: str, entity_type: Optional[str] = None) -> str:
-        entities = self.get_entities()
+        try:
+            entities = self.get_entities()
 
-        # Filter entities based on the entity name and type
-        matching_entities = []
-        for entity in entities:
-            friendly_name = entity.attributes.get('friendly_name', '').lower()
-            if entity_name.lower() in friendly_name:
-                if entity_type:
-                    if entity.entity_id.startswith(entity_type):
+            # Filter entities based on the entity name and type
+            matching_entities = []
+            for entity in entities:
+                friendly_name = entity.attributes.get('friendly_name', '').lower()
+                if entity_name.lower() in friendly_name:
+                    if entity_type:
+                        if entity.entity_id.startswith(entity_type):
+                            matching_entities.append(entity)
+                    else:
                         matching_entities.append(entity)
-                else:
-                    matching_entities.append(entity)
 
-        if not matching_entities:
-            return f"Sorry, I couldn't find any device named '{entity_name}'."
-        elif len(matching_entities) > 1:
-            return f"I found multiple devices named '{entity_name}'. Please be more specific."
-        else:
-            target_entity = matching_entities[0]
-            success = self.perform_action(entity_id=target_entity.entity_id, action=Action(action))
-            if success:
-                return f"'{target_entity.attributes.get('friendly_name')}' has been '{action.replace('_', ' ')}' successfully."
+            if not matching_entities:
+                return f"Sorry, I couldn't find any device named '{entity_name}'."
+            elif len(matching_entities) > 1:
+                return f"I found multiple devices named '{entity_name}'. Please be more specific."
             else:
-                return f"Sorry, I couldn't '{action.replace('_', ' ')}' '{target_entity.attributes.get('friendly_name')}'."
+                target_entity = matching_entities[0]
+                success = self.perform_action(entity_id=target_entity.entity_id, action=Action(action))
+                if success:
+                    return f"'{target_entity.attributes.get('friendly_name')}' has been '{action.replace('_', ' ')}' successfully."
+                else:
+                    return f"Sorry, I couldn't '{action.replace('_', ' ')}' '{target_entity.attributes.get('friendly_name')}'."
+        except HaAuthenticationException as e:
+            return f"I'm not authenticated to Home Assistant. Please reset your Home Assistant and try again. {str(e)}"

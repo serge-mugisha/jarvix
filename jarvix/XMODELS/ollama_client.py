@@ -1,51 +1,81 @@
+import logging
 import os
+import threading
+import subprocess
+import time
+import shutil
+from enum import Enum
+from pathlib import Path
 
 from pydantic import BaseModel, Field
 from typing import List, Dict
+from XMODELS.function_definitions import function_definitions
 import ollama
-import subprocess
-import time
+from UTILS.printer import debug_print
 
-from jarvix.XMODELS.function_definitions import function_definitions
+if os.getenv('LOGGING', 'false').lower() == 'true':
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
 
-CHAT_ROLE_MESSAGE = (
-    "You are an AI System called Jarvix. Your job is to answer every question users ask you no matter what."
-    "You also support in extracting actions and entity names from user commands for use in Home Assistant API through function calling. Use supplied tools to assist the user."
-)
+
+class OllamaModel(Enum):
+    LLAMA = "llama3.2:latest"
+    MISTRAL = "mistral:latest"
+    JARVIX = "jarvix:latest"
 
 class OllamaClient(BaseModel):
-    model_name: str
+    model_name: OllamaModel = OllamaModel.JARVIX
     word_limit: int = 50
     conversation_history: List[Dict[str, str]] = Field(default_factory=list)
     max_tokens: int = 300
     function_registry: dict = Field(default_factory=dict)
+    custom_model_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), 'local_models'))
+    modelfile_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), 'modelfile'))
 
     class Config:
         protected_namespaces = ()
         arbitrary_types_allowed = True
 
-    def process_text(self, text: str) -> str:
+    def __init__(self, **data):
+        super().__init__(**data)
+        if not self._is_ollama_installed():
+            debug_print("Ollama is not installed. Installing Ollama...")
+            self._install_ollama()
+
         if not self._is_ollama_running():
-            print("Ollama is not running. Starting Ollama...")
+            debug_print("Ollama is not running. Starting Ollama...")
             self._start_ollama()
             self._wait_for_ollama()
 
-        # prompt_with_limit = f"{text}.\nPlease respond with direct answers and no more than {self.word_limit} words."
-        self.conversation_history.append({"role": "system", "content": CHAT_ROLE_MESSAGE})
-        self.conversation_history.append({"role": "user", "content": text})
-        response = self._send_request_with_history()
+        if not self._is_model_downloaded(self.model_name):
+            debug_print(f"Model '{self.model_name}' is not downloaded. Downloading {OllamaModel.LLAMA.value} to build {self.model_name.value}...")
+            try:
+                subprocess.run(["ollama", "pull", OllamaModel.LLAMA.value], check=True, env=self._get_custom_env())
+                debug_print(f"Model '{self.model_name.value}' downloaded successfully.")
+                self._build_model()
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(f"Failed to download model '{self.model_name.value}': {e}")
 
-        self.conversation_history.append({"role": "assistant", "content": response})
-        self._truncate_history_if_needed()
+    def _build_model(self) -> None:
+        if not os.path.exists(self.modelfile_path):
+            raise FileNotFoundError(f"Model file '{self.modelfile_path}' not found.")
+        try:
+            subprocess.run(["ollama", "create", "jarvix", "-f", self.modelfile_path], check=True, env=self._get_custom_env())
+            debug_print(f"Model created and started successfully.")
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"Failed to create and start model: {e}")
 
-        return response
-
-    def _send_request_with_history(self) -> str:
+    def process_text(self, text: str) -> str:
         completion = ollama.chat(
-            model=self.model_name,
-            messages=self.conversation_history,
+            model=self.model_name.value,
+            messages=[{"role": "user", "content": text}],
+            stream=False,
             tools=function_definitions
         )
+
         message = completion.get('message', {})
         tool_calls = message.get('tool_calls', [])
 
@@ -60,30 +90,70 @@ class OllamaClient(BaseModel):
                 # Call the function dynamically with arguments unpacked
                 return function_to_call(**function_args)
             else:
-                return f"Unknown function: {function_name}"
+                return f"Unknown function: {function_name}. You don't have Home Assistant setup."
 
         else:
             return completion.get('message', {}).get('content', 'No response')
 
-    def _truncate_history_if_needed(self) -> None:
-        total_tokens = sum(len(entry["content"].split()) for entry in self.conversation_history)
-        while total_tokens > self.max_tokens:
-            self.conversation_history.pop(0)
-            total_tokens = sum(len(entry["content"].split()) for entry in self.conversation_history)
+    # Function to process general text. tobe called through ollama tool calls when needed
+    def process_general_text(self, user_query: str) -> str:
+        completion = ollama.chat(
+            model=self.model_name.value,
+            messages=[{"role": "user", "content": user_query}],
+            stream=False,
+        )
+        return completion.get('message', {}).get('content', 'No response')
 
     def _is_ollama_running(self) -> bool:
         try:
-            ollama.chat(model=self.model_name, messages=[])
-            return True
-        except:
+            result = subprocess.run(["lsof", "-i", ":11434"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return result.returncode == 0
+        except Exception as e:
+            debug_print(f"Error while checking if Ollama is running: {e}")
             return False
 
     def _start_ollama(self) -> None:
-        custom_model_path = os.path.join(os.getcwd(), 'XMODELS', 'local_models')
-        os.environ['OLLAMA_MODELS'] = custom_model_path # Test that setting an env var like this works
-        subprocess.Popen(["ollama", "start"])
+        thread = threading.Thread(target=self._start_ollama_thread)
+        thread.daemon = True
+        thread.start()
+
+    def _start_ollama_thread(self) -> None:
+        subprocess.Popen(
+            ["ollama", "start"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env=self._get_custom_env()
+        )
 
     def _wait_for_ollama(self) -> None:
-        print("Waiting for Ollama to start...")
+        debug_print("Waiting for Ollama to start...")
         while not self._is_ollama_running():
             time.sleep(1)
+
+    def _is_model_downloaded(self, model_name: OllamaModel) -> bool:
+        try:
+            response = ollama.list()
+            available_models = [model['name'] for model in response.get('models', [])]
+            return model_name.value in available_models
+        except Exception as e:
+            debug_print(f"Error while checking models: {e}")
+            return False
+
+    def _is_ollama_installed(self) -> bool:
+        return shutil.which("ollama") is not None
+
+    def _install_ollama(self) -> None:
+        try:
+            ollama_installation_path = f"{Path(__file__).parent / 'ollama'}"
+            os.makedirs(ollama_installation_path, exist_ok=True)
+
+            # Command to install Ollama (assuming a script or package manager command is available)
+            subprocess.run(["brew", "install", "ollama"], check=True, cwd=ollama_installation_path)
+            self._set_ollama_models_location()
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"Failed to install Ollama: {e}")
+
+    def _get_custom_env(self) -> dict:
+        env = os.environ.copy()
+        env['OLLAMA_MODELS'] = self.custom_model_path
+        return env

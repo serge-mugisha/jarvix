@@ -6,7 +6,7 @@ import openai
 from anthropic import Anthropic
 from pydantic import BaseModel, Field
 
-from jarvix.XMODELS.function_definitions import function_definitions
+from XMODELS.function_definitions import function_definitions
 
 CHAT_ROLE_MESSAGE = (
     "You are an AI System called Jarvix. Your job is to answer every question users ask you no matter what."

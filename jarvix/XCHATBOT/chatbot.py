@@ -1,23 +1,32 @@
+import logging
+import os
 import time
 from collections import deque
 from typing import ClassVar
 
-import numpy as np
-from openai import Client
 from pathlib import Path
-import sounddevice as sd
 import soundfile as sf
-from pydantic import BaseModel, Field, PrivateAttr
+import sounddevice as sd
+from pydantic import BaseModel
 from faster_whisper import WhisperModel
-from jarvix.XCHATBOT.tts import NaturalTTS
+import numpy as np
+
+from UTILS.printer import debug_print
+from XCHATBOT.tts import NaturalTTS
+
+if os.getenv('LOGGING', 'false').lower() == 'true':
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
 
 
 class Chatbot(BaseModel):
-    api_key: str = Field(..., env='OPENAI_API_KEY')
-    _client: Client = PrivateAttr()
     filename: str = 'user_input.wav'
     tts_model: str = "tts-1"
     tts_voice: str = "nova"
+    silence_duration: float = 1.3 # 3 seconds for natural pauses
     gpt_whisper_model: str = "whisper-1"
     faster_whisper_model: ClassVar[WhisperModel] = WhisperModel("large-v3", device="cpu", compute_type="int8")
     tts: ClassVar[NaturalTTS] = NaturalTTS()
@@ -25,34 +34,10 @@ class Chatbot(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        self._client = Client(api_key=self.api_key)
-
-    # Use this for OpenAI Whisper which uses API tokens
-    # def speech_to_text(self, file: Path) -> str:
-    #     with open(file, "rb") as audio_file:
-    #         transcription = self._client.audio.transcriptions.create(
-    #             model=self.gpt_whisper_model,
-    #             file=audio_file
-    #         )
-    #     return transcription.text
-
     def speech_to_text(self, file: Path) -> str:
         segments, _ = self.faster_whisper_model.transcribe(str(file))
         transcription = ''.join(segment.text for segment in segments)
         return transcription
-
-    # Use this for OpenAI TTS which uses API tokens
-    # def text_to_speech(self, text: str) -> Path:
-    #     speech_file_path = Path(__file__).parent / "completion_response.mp3"
-    #     response = self._client.audio.speech.create(
-    #         model=self.tts_model,
-    #         voice=self.tts_voice,
-    #         input=text
-    #     )
-    #     response.stream_to_file(speech_file_path)
-    #     return speech_file_path
 
     def record_audio(self) -> Path:
         speech_file_path = Path(__file__).parent / self.filename
@@ -61,7 +46,6 @@ class Chatbot(BaseModel):
         chunk_samples = int(sample_rate * chunk_duration)
 
         # Updated parameters for natural conversation
-        silence_duration = 2.0  # 3 seconds for natural pauses
         silence_threshold = 0.02  # Slightly lower threshold
         min_duration = 1.0
         max_duration = 30
@@ -104,18 +88,18 @@ class Chatbot(BaseModel):
 
                 # Stop conditions
                 if recording_duration >= max_duration:
-                    print("\nMaximum duration reached")
+                    debug_print("\nMaximum duration reached")
                     break
 
                 if has_detected_sound and recording_duration >= min_duration:
-                    if silence_counter >= silence_duration:
+                    if silence_counter >= self.silence_duration:
                         print("\nLong silence detected - ending recording")
                         break
 
-        print("\nRecording stopped, saving file...")
+        debug_print("\nRecording stopped, saving file...")
         audio = np.concatenate(frames)
         sf.write(speech_file_path, audio, sample_rate)
-        print(f"File saved as {speech_file_path}")
+        debug_print(f"File saved as {speech_file_path}")
 
         return speech_file_path
 
