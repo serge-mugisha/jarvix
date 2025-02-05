@@ -1,0 +1,28 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore virtual environments
+venv/
+
+# Ignore PyInstaller artifacts
+build/
+dist/
+*.spec
+
+# Ignore any local files not necessary for Docker
+*.log
+*.tmp
+
+# Ignore Git files
+.git/
+.gitignore
+
+# Ignore Docker-related files that don't need to be in the image
+docker-compose.yml
+
+# Workspace files
+.idea
+.vscode
+.DS_Store

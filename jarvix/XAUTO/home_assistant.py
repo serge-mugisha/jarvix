@@ -285,7 +285,8 @@ class HAClient:
     def start_home_assistant(self) -> None:
         """Start Home Assistant by running a subprocess."""
         debug_print("Home Assistant is not running, starting it now...")
-        subprocess.Popen(['hass'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # subprocess.Popen(['hass'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.Popen(['docker', 'exec', 'homeassistant', 'hass'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def wait_until_ha_is_live(self, timeout: int = 60) -> None:
         """Wait until Home Assistant is running and responsive."""

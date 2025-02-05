@@ -3,7 +3,9 @@ from XCHATBOT.chatbot import Chatbot
 from XCHATBOT.wake import WakeWordDetector
 from XMODELS.api_version import ModelType, ApiClient
 from XMODELS.ollama_client import OllamaClient, OllamaModel
-from XAUTO.home_assistant import HAConfig, HAInitializer, HAClient
+
+# TODO: Remove Home Assistant Integration
+# from XAUTO.home_assistant import HAConfig, HAInitializer, HAClient
 
 from dotenv import load_dotenv, set_key
 load_dotenv()
@@ -44,34 +46,34 @@ class InteractiveMenu:
             self.selected_model = ModelType.OLLAMA
 
         # Checking if Home Assistant has already been configured
-        is_ha_configured = os.getenv('IS_HA_CONFIGURED', False).lower() == 'true'
-        if not is_ha_configured:
-            # Asking the user if they want to set up Home Assistant
-            setup_ha = input("\n🏠 Jarvix can integrate with Home Assistant to control your smart devices. Would you like to set it up now? (yes/no): ")
-            if setup_ha.strip().lower() == "yes":
-                print("\n🏠 Great! Let's configure your Home Assistant:")
-                print("Please provide the following details to set up your smart home integration.")
-                friendly_name = input("🏷️ Friendly Name (e.g., Bob's Home): ")
-                username = input("👤 Home Assistant Username (Will later be used for authentication to Home Assistant): ")
-                password = input("🔒 Home Assistant Password (Will later be used for authentication to Home Assistant): ")
+        # TODO: Remove Home Assistant Integration
+        # is_ha_configured = os.getenv('IS_HA_CONFIGURED', False).lower() == 'true'
+        # if not is_ha_configured:
+        #     # Asking the user if they want to set up Home Assistant
+        #     setup_ha = input("\n🏠 Jarvix can integrate with Home Assistant to control your smart devices. Would you like to set it up now? (yes/no): ")
+        #     if setup_ha.strip().lower() == "yes":
+        #         print("\n🏠 Great! Let's configure your Home Assistant:")
+        #         print("Please provide the following details to set up your smart home integration.")
+        #         friendly_name = input("🏷️ Friendly Name (e.g., Bob's Home): ")
+        #         username = input("👤 Home Assistant Username (Will later be used for authentication to Home Assistant): ")
+        #         password = input("🔒 Home Assistant Password (Will later be used for authentication to Home Assistant): ")
 
-                # TODO: Ask for an address and grab all geo info from it
-                self.home_assistant_config = HAConfig(
-                    friendly_name=friendly_name,
-                    username=username,
-                    password=password,
-                    name=friendly_name,
-                    latitude=0,
-                    longitude=0,
-                    elevation=0,
-                    unit_system='metric',
-                    currency='USD',
-                    country='US',
-                    time_zone='EST',
-                    language='en'
-                )
-            else:
-                print("\n👍 Skipping Home Assistant setup. You can configure it later if you wish.")
+        #         # self.home_assistant_config = HAConfig(
+        #         #     friendly_name=friendly_name,
+        #         #     username=username,
+        #         #     password=password,
+        #         #     name=friendly_name,
+        #         #     latitude=0,
+        #         #     longitude=0,
+        #         #     elevation=0,
+        #         #     unit_system='metric',
+        #         #     currency='USD',
+        #         #     country='US',
+        #         #     time_zone='EST',
+        #         #     language='en'
+        #         # )
+        #     else:
+        #         print("\n👍 Skipping Home Assistant setup. You can configure it later if you wish.")
 
     def run(self):
         print("\n🚦 Please wait while we initialize everything for you...")
@@ -80,19 +82,21 @@ class InteractiveMenu:
         wake_detector = WakeWordDetector()
         # Load chatbot (API key will be assigned later)
         chatbot = Chatbot()
-        # Initialize Home Assistant if configured
-        ha_client = None
+        # TODO: Remove Home Assistant Integration
+        # ha_client = None
+
         function_registry = {}
-        if os.getenv('IS_HA_CONFIGURED', 'False').lower() == 'false':
-            if self.home_assistant_config is not None:
-                HAInitializer(config=self.home_assistant_config)
-                ha_client = HAClient()
-                function_registry["control_home_device"] = ha_client.control_home_device
-            else:
-                print("\n⚠️ Home Assistant is not configured. Skipping initialization.")
-        else:
-            ha_client = HAClient()
-            function_registry["control_home_device"] = ha_client.control_home_device
+        # TODO: Remove Home Assistant Integration
+        # if os.getenv('IS_HA_CONFIGURED', 'False').lower() == 'false':
+        #     if self.home_assistant_config is not None:
+        #         HAInitializer(config=self.home_assistant_config)
+        #         ha_client = HAClient()
+        #         function_registry["control_home_device"] = ha_client.control_home_device
+        #     else:
+        #         print("\n⚠️ Home Assistant is not configured. Skipping initialization.")
+        # else:
+        #     ha_client = HAClient()
+        #     function_registry["control_home_device"] = ha_client.control_home_device
 
         # Setup API client based on the selected model
         api_client = None

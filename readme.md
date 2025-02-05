@@ -5,13 +5,9 @@
 2. Install the required packages
 3. Create a .env file in the same directory as the script
 4. Add the required environment variables
-5. Create a virtual environment and activate it
-    ```
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
-6. Install the required packages `pip install -r requirements.txt`
-7. Run the script `python3 jarvix/main.py`
+5. Have Docker installed & navigate to the project root
+6. Build a docker container `docker-compose build jarvix-app`
+7. Spin the container `docker-compose run jarvix-app`
 
 ### Setup ###
 Environment Variables:

@@ -1,0 +1,27 @@
+services:
+  jarvix-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    container_name: jarvix-app
+    # depends_on:
+    #   - homeassistant
+    volumes:
+      - ./app-data:/app-data  # Persist app data if needed
+    environment:
+      - HA_URL=http://homeassistant:8123  # Set Home Assistant URL
+    stdin_open: true
+    tty: true
+    command: python3 jarvix/main.py
+
+  # TODO: Remove Home Assistant Integration
+  # homeassistant:
+  #   image: homeassistant/home-assistant:stable
+  #   container_name: homeassistant
+  #   platform: linux/amd64
+  #   volumes:
+  #     - ./homeassistant-config:/config  # Persist Home Assistant configuration
+  #   network_mode: "host"  # Expose Home Assistant on the host network (if necessary)
+  #   environment:
+  #     - TZ=UTC
